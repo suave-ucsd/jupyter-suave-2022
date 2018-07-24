@@ -21,6 +21,7 @@ dependencies:
   - geopandas
   - geojsonio
   - scikit-learn
+  - pip
   - pip:
     - imutils
     - clarifai

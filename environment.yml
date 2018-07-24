@@ -21,4 +21,4 @@ dependencies:
   - geopandas
   - geojsonio
   - scikit-learn
-  - imutils
+

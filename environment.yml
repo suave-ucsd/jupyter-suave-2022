@@ -15,6 +15,9 @@ dependencies:
   - bokeh
   - dask
   - ipywidgets
+  - osgeo:
+    - ogr
+    - gdal
   - owslib
   - geojson
   - shapely

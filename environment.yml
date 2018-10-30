@@ -21,8 +21,12 @@ dependencies:
   - geopandas
   - geojsonio
   - scikit-learn
+  - keras
+  - glob
   - pip
   - pip:
     - imutils
     - clarifai
+    - opencv-python-headless
+    - opencv-contrib-python-headless
 

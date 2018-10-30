@@ -29,4 +29,7 @@ dependencies:
     - clarifai
     - opencv-python-headless
     - opencv-contrib-python-headless
+    - tensorflow
+    - tensorflow-gpu
+    
 

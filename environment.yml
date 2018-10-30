@@ -20,6 +20,8 @@ dependencies:
   - shapely
   - geopandas
   - geojsonio
+  - tensorflow
+  - tensorflow-gpu
   - scikit-learn
   - keras
   - glob
@@ -27,9 +29,6 @@ dependencies:
   - pip:
     - imutils
     - clarifai
-    - opencv-python-headless
     - opencv-contrib-python-headless
-    - tensorflow
-    - tensorflow-gpu
     
 

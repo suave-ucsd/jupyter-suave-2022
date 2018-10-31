@@ -24,7 +24,6 @@ dependencies:
   - tensorflow-gpu
   - scikit-learn
   - keras
-  - glob
   - pip
   - pip:
     - imutils

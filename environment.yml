@@ -28,7 +28,7 @@ dependencies:
   - pip:
     - imutils
     - clarifai
-    - opencv-python-headles
+    - opencv-python-headless
     - opencv-contrib-python-headless
     
 

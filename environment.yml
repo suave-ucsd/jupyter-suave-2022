@@ -23,6 +23,7 @@ dependencies:
   - tensorflow
   - tensorflow-gpu
   - scikit-learn
+  - panel
   - keras
   - pip
   - pip:

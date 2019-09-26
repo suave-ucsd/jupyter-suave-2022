@@ -17,7 +17,7 @@ pn.extension()
 # Variable to prevent multiple runs of this script
 run = False
 
-def image_display(df, cols):
+def image_display(df, cols, url):
     
     # Column Selector widget
     col_options = cols
@@ -27,15 +27,30 @@ def image_display(df, cols):
     # Image generation button
     generator = pn.widgets.Toggle(name='Generate Images', margin=(15,20,0,30), width=200)
     
+    # Progress widget for image generation
+    global progress_img
+    progress_img = pn.pane.Markdown('')
+    
     @pn.depends(generator.param.value)
     def generate_trigger(click):
+        
         global run
+        
+        if (generator.value == False) and (not run):
+            display = pn.Row(ql.slider(ql.updated_df), margin=(20,0,0,-220))
+            return display
         
         if run and not click:
             global image_df
             image_df = generate_images(df, col_selector.value)
             
-            return 'Done. Zip archive created in directory.'
+            progress_img.object = ''
+            message = pn.pane.HTML("<p>Done. Zip archive with images " +
+                                   "ready to download <a href='" + url + "/generated_images.zip'" + 
+                                   " target='_blank'>here</a>.</p>")
+            display = pn.Row(ql.slider(ql.updated_df), margin=(20,0,0,-220))
+            
+            return pn.Column(message, display)
             
         
         elif click:
@@ -44,14 +59,17 @@ def image_display(df, cols):
             generator.disabled = True
             
             return 'Images are being created. Please wait..'
-            
 
     # Display widgets
     right_panel = pn.Column(generator, generate_trigger)
     options = pn.Row(col_selector, right_panel)
-    widgets = pn.Column(options, ql.slider(ql.updated_df))
+    widgets = pn.Column(options, progress_img)
     
     return widgets
+
+# Base progress menu for image generation
+base_progress = ('| Value | Status |' + 
+                 '\n|:---------:|:-------:|')
 
 
 def generate_images(nonimage_df, col):
@@ -79,6 +97,7 @@ def generate_images(nonimage_df, col):
     for index, row in df.iterrows():
         if row[column_to_convert] == '':
             row["#img"] = "image_not_available"
+            progress_img.object = base_progress + '\n| ' + row[column_to_convert] + ' | Image Not Available |'
         elif 'field_or_processed' not in row.index:
             fname = to_image(row[column_to_convert],"white","blue","_o")
             row["#img"] = fname
@@ -112,6 +131,8 @@ def generate_images(nonimage_df, col):
 
 
 def to_image(unicode_text, bgr_color, text_color,colortype):
+    
+    progress_img.object = base_progress + '\n| ' + unicode_text + ' | Image Generated |'
     
     filename = re.sub(r'[\\\\/*?:"<>|]',"",unicode_text)
     filename = filename.replace(" ", "_")

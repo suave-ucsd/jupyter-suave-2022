@@ -45,6 +45,16 @@ def geocoder(options):
 
     # Geocode Button widget
     geo_button = pn.widgets.Toggle(name='Geocode', margin=(15,0,0,30), width=200)
+    
+    # Progress widget
+    global progress_geocode
+    progress_geocode = pn.pane.Markdown('')
+    
+    # Stores geocoded and non-geocoded values
+    global is_geocoded
+    global not_geocoded
+    is_geocoded = []
+    not_geocoded = []
 
     @pn.depends(geo_button.param.value)
     def geocode_trigger(click):
@@ -72,7 +82,7 @@ def geocoder(options):
         for col in updated_df.columns:
             if '#number#hidden' in col:
                 error = '#####Coordinate columns already exist.'
-                return pn.Column(error, slider(updated_df))
+                return pn.Column(error, ql.slider(updated_df))
         
         # Geocodes and stores latitude/longitude for each address
         unique_vals = updated_df[geo_select.value].dropna().unique()
@@ -89,12 +99,20 @@ def geocoder(options):
                                                  .map(address_dict)
                                                  .apply(lambda x: x[1] if type(x) == list else None))
 
-        row_slider = ql.slider(updated_df)
+        progress_geocode.object = ''
         
-        return row_slider
+        report_message = pn.pane.Markdown('**Geocoding Finished:**', margin=(24,20,0,0))
+        geocoded_vals = pn.widgets.Select(name='Geocoded Values', options=is_geocoded, width=200)
+        non_geocoded_vals = pn.widgets.Select(name='Non Geocoded Values', options=not_geocoded, width=200)
+        full_report = pn.Row(report_message, geocoded_vals, non_geocoded_vals, margin=(5,0,20,0))
+                        
+        row_slider = ql.slider(updated_df)
+        full_display = pn.Column(full_report, row_slider)
+
+        return full_display
 
     geo_widgets = pn.Row(geo_select, geo_button, margin=(0,0,15,0))
-    widgets = pn.Column(geo_widgets, geocode_trigger)
+    widgets = pn.Column(geo_widgets, geocode_trigger, progress_geocode)
     
     return widgets
 
@@ -108,8 +126,13 @@ def get_coords(address):
     :returns: dictionary with keys as addresses and
               values as latitude/longitude coordinates
     """
+        
+    # Base progress menu for geocoder
+    base_progress = ('| Placename | Status | Latitude | Longitude |' + 
+                     '\n|:---------:|:-------:|:--------:|:---------:|')
     
     if pd.isnull(address):
+        progress_geocode.object = base_progress + '\n| Null | Failed | Null | Null |'
         return 
     
     # dstk API url
@@ -123,12 +146,19 @@ def get_coords(address):
     
     # Handles case of no results/invalid address
     if response['status'] == 'ZERO_RESULTS':
+        not_geocoded.append(address)
+        progress_geocode.object = base_progress + '\n| ' + address + ' | Failed | Null | Null |'
         return {address: [None, None]}
     
     # Extracts result
     coords = response['results'][0]['geometry']['location']
     lat = coords['lat']
     lon = coords['lng']
+    
+    progress_geocode.object = base_progress + ('\n| ' + address + ' | Geocoded | ' + 
+                                               str(lat) + ' | ' + str(lon) + ' |')
+    
+    is_geocoded.append(address)
     
     return {address: [lat, lon]}
 
@@ -154,7 +184,15 @@ def json_to_geometry(file_value, options):
     prop_selector = pn.widgets.Select(name='Select GeoJSON Property to Match', options=['None']+json_props)
 
     # Geometry Generator button
-    generator = pn.widgets.Toggle(name='Generate Geometry', disabled=True, margin=(20,0,0,30), width=200)
+    generator = pn.widgets.Toggle(name='Generate Geometry', disabled=True, margin=(22,0,0,30), width=200)
+    
+    # Progress widget for json to geometry
+    global progress_json
+    progress_json = pn.pane.Markdown('', margin=(-20,0,0,0))
+    
+    # Stores values that produced/did not produce geometries
+    with_geom = []
+    no_geom = []
 
     df = ql.updated_df
     geometries = {}
@@ -174,7 +212,6 @@ def json_to_geometry(file_value, options):
 
         if (col == 'None') or (prop == 'None'):
             return
-
 
         # Extracts all property values from json and geometries for future use
         prop_vals = []
@@ -217,10 +254,13 @@ def json_to_geometry(file_value, options):
         response = ("**"+str(match)+"** of **"+str(len(df))+
                     "** values in '"+col+"' have a geometry. "+
                     "Please click on 'Generate Geometry' to continue.")
+        
+        global response_widget
+        response_widget = pn.pane.Markdown(response, margin=(5,10,5,10), width=625)
 
         generator.disabled = False
 
-        return pn.pane.Markdown(response, margin=(5,10,5,10), width=625)
+        return response_widget
 
     @pn.depends(generator.param.value)
     def generate_geometry(generate):
@@ -240,23 +280,61 @@ def json_to_geometry(file_value, options):
 
             :param string: String to be check in dictionary
             """
+            
+            # Base progress menu for json to geometry
+            base_progress = ('| Placename | Status |' + 
+                             '\n|:---------:|:-------:|')
+            
             if pd.isnull(string):
+                progress_json.object = base_progress + '\n|  Null  | Failed |'
                 return None
             elif string.lower() in geometries.keys():
+                progress_json.object = base_progress + '\n| ' + string + ' | Success |'
+                with_geom.append(string)
                 return geometries[string.lower()]
             else:
+                progress_json.object = base_progress + '\n| ' + string + ' | Failed |'
+                no_geom.append(string)
                 return ''
 
         if generate:
-            df['geometry'] = df[column_selector.value].apply(geom_function)
+            
             generator.disabled = True
-            return ql.slider(df)    
+            response_widget.object = ''
+            
+            # checks for existing geometry column
+            for col in df.columns:
+                if 'geometry' in col.lower():
+                    generator.disabled = True
+                    message = pn.pane.Markdown('Geometry column already exists. Either remove ' + 
+                                               'column above or continue.', margin=(-25,0,15,0))
+                    return pn.Column(message, ql.slider(df))
+            
+            # Generates geometries
+            unique_vals = df[column_selector.value].unique()
+            geometry_vals = pd.Series(unique_vals).apply(geom_function)
+            geom_dict = pd.Series(geometry_vals.values, index=unique_vals).to_dict()
+            df['geometry#hiddenmore'] = df[column_selector.value].map(geom_dict)
+            
+            progress_json.object = ''
+            
+            # Produce final widgets
+            report_message = pn.pane.Markdown('**Geometries Generated:**', margin=(24,20,0,0))
+            geom_vals = pn.widgets.Select(name='With Geometry', options=with_geom, width=200)
+            non_geom_vals = pn.widgets.Select(name='No Geometry', options=no_geom, width=200)
+            full_report = pn.Row(report_message, geom_vals, non_geom_vals, margin=(-20,0,20,0))
+                        
+            row_slider = ql.slider(df)
+            full_display = pn.Column(full_report, row_slider)
+            
+            return full_display   
 
     # Display widgets
-    selectors = pn.Row(column_selector, prop_selector)
-    selectors_display = pn.Column(selectors, display_match, css_classes=['widget-box'])
-    top_panel = pn.Row(selectors_display, generator)
-    geom_df = pn.Row(generate_geometry, margin=(20,0,0,0))
+    selectors = pn.Row(column_selector, prop_selector, margin=(2,2,2,5))
+    selector_panel = pn.Row(selectors, css_classes=['widget-box'])
+    left_panel = pn.Column(selector_panel, display_match)
+    top_panel = pn.Row(left_panel, generator)
+    geom_df = pn.Column(progress_json, generate_geometry, margin=(20,0,0,0))
     geom_display = pn.Column(top_panel, geom_df)
     
     return geom_display

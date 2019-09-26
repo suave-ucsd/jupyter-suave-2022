@@ -40,6 +40,13 @@ def qualifier_editor():
     :returns: data frame with qualifiers and editor widgets 
     """ 
     
+    # Clears out stored column names if qualifier_editor was previously run.
+    if ('stored_quant' in globals()) and ('stored_text' in globals()):
+        global stored_quant
+        global stored_text
+        stored_quant=[]
+        stored_text=[]
+    
     # Produces data frame with column qualifiers
     df = generate_qualifiers()
     
@@ -50,21 +57,27 @@ def qualifier_editor():
         updated_df = df
         
     # Column Selector widget
-    col_select = pn.widgets.IntSlider(name='Navigate Columns', end=len(df.columns))
+    col_select = pn.widgets.IntSlider(name='Navigate Columns', end=len(df.columns), width=930)
     
     # Variable Selector widget
-    var_select = pn.widgets.CrossSelector(options=list(df.columns), height=150)
+    var_select = pn.widgets.CrossSelector(options=list(df.columns), height=161)
 
-    # Qualifier Selector widget
-    qualifiers = ['None', '#name', '#img', '#href', '#number',  
-                  '#link', '#ordinal', '#textlocation', '#multi', 
-                  '#info', '#date', '#long', '#hidden', '#hiddenmore']
-    qual_select = pn.widgets.Select(name='Select Qualifier', width=230,
-                                    margin=(0,0,12,10), options=qualifiers)
+    # Qualifier Selector widgets
+    qualifiers = ['#name', '#img', '#href', '#number', '#link',
+                  '#ordinal', '#textlocation', '#multi', '#info', 
+                  '#date', '#long', '#hidden', '#hiddenmore']
+    qual_select = pn.widgets.Select(name='Select Qualifier(s)', width=112,
+                                    margin=(0,0,12,10), options=['None']+qualifiers)
+    
+    qual_select2 = pn.widgets.Select(width=112, margin=(19,0,12,5), 
+                                     options=['#hidden', '#hiddenmore'])
+    
+    # Qualifier Combination Enabler widget
+    combination = pn.widgets.Checkbox(name='Enable Combination', width=150, margin=(-6,0,8,55))
     
     # Rename Column widget
     rename = pn.widgets.TextInput(name = 'Rename Column (Without Qualifier)', 
-                                  margin=(-2,0,56,10), width = 230, height=10)
+                                  margin=(-2,0,46,10), width = 230, height=10)
 
     # Update Data Frame widget
     updater = pn.widgets.Toggle(name='Apply Changes', margin=(8,10,7,10))
@@ -137,7 +150,10 @@ def qualifier_editor():
             return updated_df.iloc[:10, col:col+10]
         
         else:
-            updated = [var.split('#')[0]+qual_select.value for var in selected]
+            if combination.value:
+                updated = [var.split('#')[0]+qual_select.value+qual_select2.value for var in selected]
+            else:
+                updated = [var.split('#')[0]+qual_select.value for var in selected]
         
         # Updating stored qualifiers
         global stored_quant
@@ -184,14 +200,32 @@ def qualifier_editor():
             if len(var) == 0:
                 return
             rename.value = var[0].split('#')[0]
+            
+            
+    @pn.depends(combination.param.value)
+    def combo_trigger(combo):
+        """
+        combo_trigger enables/disables the second 
+        qualifier select widget based on whether
+        or not the user wants a qualifier combination
+        
+        :param bool: bool representing enabling/disabling 
+                     second selector widget
+        """
+        
+        if combo:
+            qual_select2.disabled = False
+        else:
+            qual_select2.disabled = True
         
 
     # Displays widgets produced above
-    right_edit = pn.Column(qual_select, rename, updater,
+    qualifier_selectors = pn.Row(qual_select, qual_select2)
+    right_edit = pn.Column(qualifier_selectors, combination, rename, updater,
                            width=250, css_classes=['widget-box'])
     left_edit = pn.Column(var_select, css_classes=['widget-box'], margin=(0,10,0,0))
     full_edit = pn.Row(left_edit, right_edit, margin=(20,0,0,0))
-    full_widget = pn.Column(col_select, update_trigger, full_edit, variable_rename)
+    full_widget = pn.Column(col_select, update_trigger, full_edit, variable_rename, combo_trigger)
 
     return full_widget
 
@@ -214,12 +248,35 @@ def generate_qualifiers():
     :returns: data frame with qualifiers
     """
     
+    global stored_quant
+    global stored_text
+    
+    
     # Determines proper data type for each column
     df = fs.final_df.apply(determine_type, axis=0)
     
     num_cols = quant_cols
     str_cols = text_cols
-
+    
+    # Checks if column names already contain qualifiers
+    qualifiers = ('#name', '#img', '#href', '#number', '#link',
+                  '#ordinal', '#textlocation', '#multi', '#info', 
+                  '#date', '#long', '#hidden', '#hiddenmore')
+    
+    for col_name in fs.final_df.columns:
+        if col_name.endswith(qualifiers):
+            
+            for col in fs.final_df.columns:
+                # Stores qualifier type for future use
+                if col in quant_cols:
+                    stored_quant.append(col)
+                else:
+                    stored_text.append(col) 
+                    
+            refresh()
+                
+            return fs.final_df
+    
     # Determines proper qualifier for each column
     link_cols = find_cols(df, str_cols, has_link)
     date_cols = find_cols(df, list(set(str_cols).difference(link_cols)), has_date)
@@ -229,7 +286,6 @@ def generate_qualifiers():
     str_cols = list(set(str_cols).difference(link_cols+date_cols+long_cols+coord_cols))
     num_cols = list(set(num_cols).difference(coord_cols))
 
-
     # Applies qualifiers to data frame
     qualifier_dict = {'#number':num_cols, '#link':link_cols, 
                       '#date':date_cols, '#long':long_cols, 
@@ -237,10 +293,7 @@ def generate_qualifiers():
     df = add_qualifiers(df, qualifier_dict)
     
     # Stores qualifier type for future use
-    for col_name in df.columns:
-        global stored_quant
-        global stored_text
-            
+    for col_name in df.columns:     
         no_qual = col_name.split('#')[0]
         if no_qual in quant_cols:
             stored_quant.append(col_name)

@@ -1,8 +1,8 @@
-""" Zip Unzipper and Displayer
+""" Data Display & Editor
 
 This script reads in a file from your directory (.tsv, .txt, .csv)
 and displays its contents to the user. Users can then select and 
-modify the file through theuse of widgets.
+modify the file through the use of widgets.
 
 To achieve this functionality, simply run view_data() by 
 providing it with a valid path to the file.
@@ -27,13 +27,13 @@ def view_data(path):
     view_data displays all necessary widgets to view, 
     modify, and save a file from a file path.
 
-    :param link: string containing link to zip file
-    :returns: zip file with editor widgets
+    :param link: string representing path to file
+    :returns: data frame with editor widgets
     """
-
+            
     # Reads in data 
     data = extract_data(path)
-
+    
     # Row Selector widget
     row_selection = pn.widgets.IntSlider(name='Navigate Rows', 
                                          width=350, margin=(0,50,-15,0))
@@ -66,7 +66,8 @@ def view_data(path):
     undo = pn.widgets.Toggle(name='Undo', margin=(25,0,0,55), width=200)
     
     # Save widget
-    saver = pn.widgets.Toggle(name='Finish & Save Data', margin=(10, 0, 0, 55), width=200)
+    saver = pn.widgets.Toggle(name='Finish & Save Data', button_type='danger', 
+                              margin=(10, 0, 0, 55), width=200)
    
     # Keeps track of last change to data frame in case of an undo
     global header_vals
@@ -109,6 +110,7 @@ def view_data(path):
         # such as 'started' or 'head_val' to detect a change in the header selector.
 
         # Checks for previous run of this function or change in data
+        global active_data
         global updated_df
         global stored_data
         global previous_stored
@@ -117,10 +119,12 @@ def view_data(path):
         global started
         global head_val
         
-        if ('updated_df' in globals()):
+        if ('updated_df' in globals()) and (path == active_data):
             df = updated_df.copy()
         else:
-            df = data
+            active_data = path
+            #df = data
+            df = extract_data(path)
             stored_data = df.copy()
             previous_stored = stored_data.copy()
             previous_df = df.copy()
@@ -214,8 +218,9 @@ def view_data(path):
                     updated_df = pd.concat([lower_frame, upper_frame])
                     previous_stored = stored_data.copy()
                     stored_lower_frame = stored_data[stored_data.index < int(lower)]
-                    stored_upper_frame = stored_data[stored_data.index > int(lower)]
+                    stored_upper_frame = stored_data[stored_data.index > int(upper)]
                     stored_data = pd.concat([stored_lower_frame, stored_upper_frame])
+                    row_drop.value = ''
                   
                 else:    
                     # Checks for invalid row number
@@ -227,6 +232,7 @@ def view_data(path):
                     updated_df = updated_df.drop(int(row_drop.value))
                     previous_stored = stored_data.copy()
                     stored_data = stored_data.drop(int(row_drop.value))
+                    row_drop.value = ''
 
         # Saves data frame when user clicks save widget
         if save:

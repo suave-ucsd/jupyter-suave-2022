@@ -24,6 +24,9 @@ dependencies:
   - tensorflow-gpu
   - scikit-learn
   - panel
+  - holoviews
+  - hvplot
+  - datashader
   - keras
   - pip
   - pip:

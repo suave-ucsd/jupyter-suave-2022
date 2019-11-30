@@ -36,4 +36,4 @@ dependencies:
     - tqdm
     - opencv-python-headless
     - opencv-contrib-python-headless
-    - git+git://github.com/explosion/spacy-models@en_core_web_sm-2.2.5#egg=en-core-web-sm
+    - git+git://github.com/explosion/spacy-models@en_core_web_sm-2.2.5#egg=en_core_web_sm

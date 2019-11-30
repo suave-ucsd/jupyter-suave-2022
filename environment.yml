@@ -10,7 +10,7 @@ dependencies:
   - toolz
   - matplotlib
   - dill
-  - pandas
+  - pandas==0.24
   - partd
   - bokeh
   - dask
@@ -27,6 +27,8 @@ dependencies:
   - holoviews
   - hvplot
   - datashader
+  - tqdm
+  - spacy
   - keras
   - pip
   - pip:
@@ -34,5 +36,5 @@ dependencies:
     - clarifai
     - opencv-python-headless
     - opencv-contrib-python-headless
-    
+    - https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-2.2.5/en_core_web_sm-2.2.5.tar.gz
 

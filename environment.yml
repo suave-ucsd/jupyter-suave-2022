@@ -27,14 +27,14 @@ dependencies:
   - holoviews
   - hvplot
   - datashader
-  - tqdm
-  - spacy
   - keras
   - pip
   - pip:
     - imutils
     - clarifai
+    - spacy
+    - tqdm
     - opencv-python-headless
     - opencv-contrib-python-headless
-    - https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-2.2.5/en_core_web_sm-2.2.5.tar.gz
+    - git+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-2.2.5/en_core_web_sm-2.2.5.tar.gz
 

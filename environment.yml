@@ -10,7 +10,7 @@ dependencies:
   - toolz
   - matplotlib
   - dill
-  - pandas==0.24
+  - pandas
   - partd
   - bokeh
   - dask
@@ -27,6 +27,7 @@ dependencies:
   - holoviews
   - hvplot
   - datashader
+  - xarray
   - keras
   - pip
   - pip:

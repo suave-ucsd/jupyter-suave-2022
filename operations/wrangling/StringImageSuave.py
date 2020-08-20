@@ -13,6 +13,11 @@ import QualifierSuave as ql
 # Loading extensions
 pn.extension()
 
+import sys
+sys.path.insert(1, '../../helpers')
+import panel_libs as panellibs
+
+
 
 # Variable to prevent multiple runs of this script
 run = False
@@ -37,7 +42,7 @@ def image_display(df, cols, url):
         global run
         
         if (generator.value == False) and (not run):
-            display = pn.Row(ql.slider(ql.updated_df), margin=(20,0,0,-220))
+            display = pn.Row(panellibs.slider(ql.updated_df), margin=(20,0,0,-220))
             return display
         
         if run and not click:
@@ -48,7 +53,7 @@ def image_display(df, cols, url):
             message = pn.pane.HTML("<p>Done. Zip archive with images " +
                                    "ready to download <a href='" + url + "/generated_images.zip'" + 
                                    " target='_blank'>here</a>.</p>")
-            display = pn.Row(ql.slider(ql.updated_df), margin=(20,0,0,-220))
+            display = pn.Row(panellibs.slider(ql.updated_df), margin=(20,0,0,-220))
             
             return pn.Column(message, display)
             

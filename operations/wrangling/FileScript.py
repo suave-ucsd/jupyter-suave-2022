@@ -81,9 +81,9 @@ def view_data(path):
     head_val = 1
     started = False
 
-    @pn.depends(row_selection.param.value, col_selection.param.value, 
-                radio_selection.param.value, dropper.param.value, 
-                head_selection.param.value, undo.param.value, saver.param.value)
+    @pn.depends(row_selection, col_selection, 
+                radio_selection, dropper, 
+                head_selection, undo, saver)
     def select_data(row, col, radio, drop, head, back, save):
         """
         select_data updates the existing data frame 
@@ -252,7 +252,7 @@ def view_data(path):
                        width=250,css_classes=['widget-box'])
     right_panel = pn.Column(header, undo, saver, width = 300)
     editors = pn.Row(drop_widgets, right_panel, margin=(30,0,0,30))
-    widgets = pn.Column(navigators, select_data, editors)
+    widgets = pn.Column(navigators, pn.panel(select_data, width=800), editors, width=800).servable()
     
     return widgets
 

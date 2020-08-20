@@ -26,6 +26,11 @@ import pandas as pd
 import json
 import panel as pn
 
+import sys
+sys.path.insert(1, '../../helpers')
+import panel_libs as panellibs
+
+
 # Loading extensions
 pn.extension()
 
@@ -70,7 +75,7 @@ def geocoder(options):
         
         if geo_select.value == 'None':
             geo_button.value = False
-            return ql.slider(updated_df)
+            return panellibs.slider(updated_df)
         
         if geo_button.value == True:
             # Temporarily disables geocode button
@@ -82,7 +87,7 @@ def geocoder(options):
         for col in updated_df.columns:
             if '#number#hidden' in col:
                 error = '#####Coordinate columns already exist.'
-                return pn.Column(error, ql.slider(updated_df))
+                return pn.Column(error, panellibs.slider(updated_df))
         
         # Geocodes and stores latitude/longitude for each address
         unique_vals = updated_df[geo_select.value].dropna().unique()
@@ -106,7 +111,7 @@ def geocoder(options):
         non_geocoded_vals = pn.widgets.Select(name='Non Geocoded Values', options=not_geocoded, width=200)
         full_report = pn.Row(report_message, geocoded_vals, non_geocoded_vals, margin=(5,0,20,0))
                         
-        row_slider = ql.slider(updated_df)
+        row_slider = panellibs.slider(updated_df)
         full_display = pn.Column(full_report, row_slider)
 
         return full_display
@@ -308,7 +313,7 @@ def json_to_geometry(file_value, options):
                     generator.disabled = True
                     message = pn.pane.Markdown('Geometry column already exists. Either remove ' + 
                                                'column above or continue.', margin=(-25,0,15,0))
-                    return pn.Column(message, ql.slider(df))
+                    return pn.Column(message, panellibs.slider(df))
             
             # Generates geometries
             unique_vals = df[column_selector.value].unique()
@@ -324,7 +329,7 @@ def json_to_geometry(file_value, options):
             non_geom_vals = pn.widgets.Select(name='No Geometry', options=no_geom, width=200)
             full_report = pn.Row(report_message, geom_vals, non_geom_vals, margin=(-20,0,20,0))
                         
-            row_slider = ql.slider(df)
+            row_slider = panellibs.slider(df)
             full_display = pn.Column(full_report, row_slider)
             
             return full_display   

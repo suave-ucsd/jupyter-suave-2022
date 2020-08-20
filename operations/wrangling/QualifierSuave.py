@@ -85,7 +85,7 @@ def qualifier_editor():
     # Dictionary to keep track of reserved column names use
     violated = {}
     
-    @pn.depends(updater.param.value, col_select.param.value)
+    @pn.depends(updater, col_select)
     def update_trigger(update, col=0):
         """
         update_trigger updates the existing data frame
@@ -176,7 +176,7 @@ def qualifier_editor():
 
         return updated_df.iloc[:10, col:col+10]
     
-    @pn.depends(var_select.param.value, rename.param.value)
+    @pn.depends(var_select, rename)
     def variable_rename(var, name):
         """
         variable_rename renames variables in a data frame
@@ -202,7 +202,7 @@ def qualifier_editor():
             rename.value = var[0].split('#')[0]
             
             
-    @pn.depends(combination.param.value)
+    @pn.depends(combination)
     def combo_trigger(combo):
         """
         combo_trigger enables/disables the second 
@@ -225,7 +225,7 @@ def qualifier_editor():
                            width=250, css_classes=['widget-box'])
     left_edit = pn.Column(var_select, css_classes=['widget-box'], margin=(0,10,0,0))
     full_edit = pn.Row(left_edit, right_edit, margin=(20,0,0,0))
-    full_widget = pn.Column(col_select, update_trigger, full_edit, variable_rename, combo_trigger)
+    full_widget = pn.Column(col_select, pn.panel(update_trigger, width=930), full_edit, pn.panel(variable_rename), pn.panel(combo_trigger), width=930).servable()
 
     return full_widget
 
@@ -526,32 +526,6 @@ def has_long(string):
     
     str_len = len(string)
     return str_len > 100
-
-
-def slider(df):
-    """
-    slider creates an interactive display of a
-    data frame.
-    
-    :param df: data frame
-    :returns: interactive dataframe
-    """
-    
-    # Row Selector widget
-    row_selection = pn.widgets.IntSlider(name='Navigate Rows', width=350, 
-                                         margin=(0,50,-15,0), end=len(df)-1)
-
-    # Column Selector widget
-    col_selection = pn.widgets.IntSlider(name='Navigate Columns', width=350, 
-                                         margin=(0,0,5,0), end=len(df.columns))
-    
-    @pn.depends(row_selection.param.value, col_selection.param.value)
-    def navigate_data(row=0, col=0):
-        return df.iloc[row:row+5, col:col+10]
-    
-    sliders = pn.Row(row_selection, col_selection, margin=(0,0,0,10))
-    full_widget = pn.Column(sliders, navigate_data)
-    return full_widget
 
 
 def refresh():

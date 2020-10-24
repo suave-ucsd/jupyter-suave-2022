@@ -7,7 +7,7 @@ import ipywidgets as widgets
 def printmd(string):
     display(Markdown(string))
 
-def create_survey(survey_url,new_file, survey_name, dzc_file, user, csv_file, view, views):
+def create_survey(survey_url,new_file, survey_name, dzc_file, user, csv_file, view, views, iflocal="Load survey file from SuAVE"):
 
     referer = survey_url.split("/main")[0] +"/"
     upload_url = referer + "uploadCSV"
@@ -23,21 +23,40 @@ def create_survey(survey_url,new_file, survey_name, dzc_file, user, csv_file, vi
 # read the current survey file, if this is suave2
 # example: http://suave2.sdsc.edu/getSurveyDzc?user=zaslavsk&file=Alianza_2_5_21
     if urlparse(survey_url).netloc == 'suave2.sdsc.edu':
-        urlold = urlparse(survey_url).scheme+"://"+ urlparse(survey_url).netloc+'/getSurveyDzc?user='+user+'&file='+csv_file[len(user)+1:-4]
-        import json
-        rs=requests.get(urlold).json()
-        s2views = rs['views']    
-        upload_data.update( {'views' : s2views} )
+        if (iflocal == "Load survey file from SuAVE"):
+            urlold = urlparse(survey_url).scheme+"://"+ urlparse(survey_url).netloc+'/getSurveyDzc?user='+user+'&file='+csv_file[len(user)+1:-4]
+            import json
+            rs=requests.get(urlold).json()
+            s2views = rs['views']    
+            upload_data.update( {'views' : s2views} )
+        else:
+            upload_data.update({'views' : ['grid', 'bucket', 'crosstab', 'jupyter']} )
+            upload_data.update({'view' : 'grid'} )
+    else:
+        if (iflocal == "Import a local CSV file"):
+            upload_data.update({'views' : '1110001'} )
+            upload_data.update({'view' : 'grid'} )
 
     headers = {
         'User-Agent': 'suave user agent',
         'referer': referer
     }
 
+#    print("upload_data ---------------")
+#    print(upload_data)
+#    print("headers ---------------")
+#    print(headers)
+#    print("upload_url "+ upload_url)
+#    print("csv ---------------")
+#    print(csv)
+
+    
+    
+    
     r = requests.post(upload_url, files=csv, data=upload_data, headers=headers)
 
     if r.status_code == 200:
-        printmd("<b><span style='color:red'>New survey created successfully</span></b>")
+        printmd("<b><span style='color:red; font-size: 200%;'>New survey created successfully</span></b>")
         regex = re.compile('[^0-9a-zA-Z_]')
         s_url = survey_name
         s_url =  regex.sub('_', s_url)
@@ -47,9 +66,9 @@ def create_survey(survey_url,new_file, survey_name, dzc_file, user, csv_file, vi
         else:
             url = new_survey_url_base + user + "_" + s_url + ".csv" + "&views=" + views + "&view=" + view
         print(url)
-        printmd("<b><span style='color:red'>Click the URL to open the new survey</span></b>")
+        printmd("<b><span style='color:red; font-size: 200%;'>Click the URL to open the new survey</span></b>")
     else:
-        printmd("<b><span style='color:red'>Error creating new survey. Check if a survey with this name already exists.</span></b>")
+        printmd("<b><span style='color:red; font-size: 200%;'>Error creating new survey.</span><span style='color:red; font-size: 120%;'> Check if a survey with this name already exists. Make sure you are logged into your SuAVE account.</span></b>")
         printmd("<b><span style='color:red'>Reason: </span></b>"+ str(r.status_code) + " " + r.reason)
         
 def save_csv_file(df, absolutePath, csv_file):

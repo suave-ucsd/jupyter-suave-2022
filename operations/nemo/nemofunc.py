@@ -11,8 +11,9 @@ def printmd(string):
 
 # import credentials file
 import yaml
+from pathlib import Path
 try:
-    with open("config.yml", 'r') as ymlfile:
+    with open(Path.home() / 'creds.yml', 'r') as ymlfile:
         cfg = yaml.safe_load(ymlfile)
 except IOError:
     printmd("<b><span style='color:red;font-size:200%'>API KEY NOT AVAILABLE. CANNOT CONTINUE.</span></b>")

@@ -29,6 +29,7 @@ dependencies:
   - hvplot
   - datashader
   - keras
+  - ipyfilechooser
   - pip
   - pip:
     - imutils

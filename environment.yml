@@ -32,7 +32,7 @@ dependencies:
   - pip
   - pip:
     - imutils
-    - clarifai
+    - clarifai-grpc
     - spacy
     - tqdm
     - opencv-python-headless
